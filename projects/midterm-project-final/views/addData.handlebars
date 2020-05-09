@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <!-- <link rel="stylesheet" type="text/css" href="/public/css/main.css"> -->
+  <title>Add Restaurant</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.1.1/jquery.js"></script>
+</head>
+
+<body>
+  <form action="/api/addRestaurant" method="post">
+  <fieldset>
+    <legend>Add a New Restaurant</legend>
+    <br>
+    <label>Restaurant Name:</label>
+    <input type="text" name="name" placeholder="Cheesecake Factory"><br>
+    <fieldset>
+      <legend>Hours of Operation</legend><br>
+      <label>Open: </label><input type="time" name="open"><br>
+      <label>Close: </label><input type="time" name="close"><br>
+    </fieldset>
+    <fieldset>
+      <legend>Menu</legend><br>
+      <label>Enter menu items here (separated by commas): </label>
+      <input type="text" name="menu" placeholder="Burger, Fries, Milkshake" size="30">
+      <br>
+    </fieldset>
+    <fieldset>
+      <legend>Delivery Platforms</legend><br>
+      <label>Available for delivery on (separated by commas): </label>
+      <input type="text" name="platforms" placeholder="Uber Eats, GrubHub, Doordash" size="30"><br>
+      <label>Delivery Time (in minutes): </label>
+      <input type="number" name="time" placeholder="25">
+    </fieldset>
+    <input type="submit" value="Submit">
+  </fieldset>
+</form>
+
+  <script>
+
+  </script>
+</body>
+
+</html>
