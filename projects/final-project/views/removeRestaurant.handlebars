@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <!-- <link rel="stylesheet" type="text/css" href="/public/css/main.css"> -->
+  <title>Delete a Restaurant</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.1.1/jquery.js"></script>
+</head>
+
+<body>
+  <form action="/api/remove/" method="DELETE">
+    <fieldset>
+      <legend>Remove a Restaurant</legend>
+      <br>
+      <label>Restaurant Name:</label>
+      <input type="text" name="name" placeholder="Enter an existing restaurant"><br>
+      <!-- change to select form -->
+      <input type="submit" value="Submit">
+    </fieldset>
+  </form>
+</body>
+</html>

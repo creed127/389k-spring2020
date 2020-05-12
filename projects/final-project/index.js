@@ -4,10 +4,19 @@ var logger = require('morgan');
 var exphbs = require('express-handlebars');
 var restaurantUtil = require("./restaurant-util");
 var _ = require("underscore");
+var dotenv = require('dotenv');
+var mongoose = require('mongoose');
+mongoose.Promise = global.Promise;
+var Restaurant = require('./models/Restaurant');
 
-var _DATA = restaurantUtil.loadData().restaurants;
+dotenv.config();
+console.log(process.env.MONGODB);
+mongoose.connect(process.env.MONGODB);
+mongoose.connection.on('error', function(){
+  console.log('MongoDB Connection Error. Please make sure that MongoDB is runnning.');
+  process.exit(1);
+});
 var app = express();
-
 app.use(logger('dev'));
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: false }));
@@ -21,15 +30,13 @@ app.use('/public', express.static('public'));
 
 
 app.get('/',function(req, res){
-  res.render('home', {
-    data: _DATA
+  Restaurant.find({}, function(err, restaurants) {
+      if(err) throw err;
+      res.render('home',
+       {
+         data: restaurants
+      });
   });
-});
-
-app.get('/reset', function(req, res){
-  restaurantUtil.restoreOriginalData();
-  _DATA = restaurantUtil.loadData().restaurants;
-  res.redirect('/');
 });
 
 app.get('/addRestaurant', function(req,res){
@@ -38,120 +45,125 @@ app.get('/addRestaurant', function(req,res){
 
 app.post('/api/addRestaurant', function(req,res){
   var body = req.body;
-  body.menu = body.menu.trim().replace(" ","").split(",");
-  body.platforms = body.platforms.trim().replace(" ", "").split(",");
-  body.open = restaurantUtil.formatAMPM(body.open);
-  body.close = restaurantUtil.formatAMPM(body.close);
-  body.time = parseInt(body.time);
-  _DATA.push(req.body);
-  restaurantUtil.saveData(_DATA);
-  res.redirect('/');
+  var newRest = new Restaurant({
+    name: body.name,
+    hours: {
+      open: restaurantUtil.formatAMPM(body.open),
+      close: restaurantUtil.formatAMPM(body.close)
+    },
+    time: parseInt(body.time),
+    menu: body.menu.trim().replace(" ","").split(","),
+    platforms: body.platforms.trim().replace(" ", "").split(",")
+  });
+
+  newRest.save(function(err){
+    if(err) throw err;
+    return res.send('Succesfully added restaurant');
+  });
+
 });
 
-app.get('/api/getRestaurants', function(req,res){
-  res.render('getRestaurants',{
-    data: JSON.stringify(_DATA)
+app.get('/addMenuItems', function(req,res){
+  res.render('editMenu');
+});
+
+app.post('/api/addMenuItems', function(req,res){
+  var body = req.body;
+  var items = body.items;
+  Restaurant.findOne({name: body.name}, function(err,restaurant){
+    if(restaurant){
+      restaurant.menu.push(items);
+      restaurant.save(function(err){
+          if(err) throw err;
+          return res.send('Succesfully added new menu items');
+        });
+    }
+    else{
+      res.send("No restaurant with that name found!");
+    }
+  });
+});
+
+app.get('/addPlatforms', function(req,res){
+  res.render('editPlatforms');
+});
+
+app.post('/api/addPlatforms', function(req,res){
+  var body = req.body;
+  var items = body.items;
+  Restaurant.findOne({name: body.name}, function(err,restaurant){
+    if(restaurant){
+      restaurant.platforms.push(items);
+      restaurant.save(function(err){
+          if(err) throw err;
+          return res.send('Succesfully added new menu items');
+        });
+    }
+    else{
+      res.send("No restaurant with that name found!");
+    }
+  });
+});
+
+app.delete('/deleteRestaurant/:id', function(req,res){
+  Restaurant.findByIdAndRemove(req.params.id, function(err, restaurant){
+    if (err) throw err;
+    if(!restaurant) return res.send('No restaurant with that id');
+    res.send('Restaurant deleted!');
+  });
+});
+
+app.get('/remove', function(req,res){
+  res.render('removeRestaurant');
+});
+
+app.delete('/api/remove', function(req,res){
+  var body = req.body
+  Restaurant.findOne({name: body.name}, function(err, restaurant){
+    if (err) throw err;
+    if(!restaurant) return res.send('No restaurant with that name');
+    res.send('Restaurant deleted!');
   });
 });
 
 app.get('/grubhub', function(req, res) {
-  var temp = [];
-  _DATA.forEach((element) => {
-    var pl = element.platforms;
-    var output = false;
-    for(var i = 0; i < pl.length; i++){
-      if(pl[i].trim().toLowerCase().includes("grubhub")){
-        output = true;
-      }
-    }
-    if(output == true){
-      temp.push(element);
-    }
-  });
-  res.render('grubhub',
-  {
-    data: temp
+  Restaurant.find({ platforms : {$in: [" GrubHub", "GrubHub"]} }, function(err, restaurants) {
+      if(err) throw err;
+      if(!restaurants) return res.send('No restaurants close at midnight');
+      res.render('grubhub',
+       {
+         data: restaurants
+      });
   });
 });
 
-app.get('/9AM', function(req, res) {
-    var temp = [];
-    _DATA.forEach((element) => {
-      var semi = element.open.indexOf(":");
-      var space = element.open.indexOf(" ");
-      var em = element.open.indexOf("M");
-      var hours = parseInt(element.open.substring(0,semi));
-      var mins = parseInt(element.open.substring(semi+1,space+1));
-      var ampm = element.open.substring(em-1,em+1);
-      if(ampm == "AM"){
-        if(hours < 9 || hours == 9 && mins == 0){
-          temp.push(element);
-        }
-      }
-    });
-  res.render('9AM',
-  {
-    data: temp
+app.get('/pizza', function(req, res) {
+  Restaurant.find({ menu: {$in: [" pizza", "pizza", "Pizza", " Pizza"]} }, function(err, restaurants) {
+      if(err) throw err;
+      if(!restaurants) return res.send('No restaurants with pizza');
+      res.render('pizza',
+       {
+         data: restaurants
+      });
   });
 });
 
-app.get('/milkshakes', function(req, res) {
-  var temp = [];
-  _DATA.forEach((element) => {
-    var pl = element.menu;
-    var output = false;
-    for(var i = 0; i < pl.length; i++){
-      if(pl[i].trim().toLowerCase().includes("milkshake")){
-        output = true;
-      }
-    }
-    if(output == true){
-      temp.push(element);
-    }
-  });
-  res.render('milkshake',
-  {
-    data: temp
+
+app.get('/20mins', function(req, res) {
+  Restaurant.find({ time: 20 }, function(err, restaurants) {
+      if(err) throw err;
+      if(!restaurants) return res.send('No restaurants that deliver in 20 minutes');
+      res.render('20mins',
+       {
+         data: restaurants
+      });
   });
 });
 
-app.get('/deliveryTime', function(req, res) {
-  var map = new Map();
-  var temp = [];
-  var sorted = [];
-  var i = 0;
-  _DATA.forEach((element) => {
-    map.set(element.time, element);
-    sorted[i] = element.time;
-    i += 1;
-  });
-  sorted = sorted.sort();
-  for(var j = 0; j < sorted.length; j++){
-    temp.push(map.get(sorted[j]));
-  }
-  res.render('deliveryTime', {
-    data: temp
-  });
-});
 
-app.get('/midnight', function(req, res) {
-  var temp = [];
-  _DATA.forEach((element) => {
-    var semi = element.close.indexOf(":");
-    var space = element.close.indexOf(" ");
-    var em = element.close.indexOf("M");
-    var hours = parseInt(element.close.substring(0,semi));
-    var mins = parseInt(element.close.substring(semi+1,space+1));
-    var ampm = element.close.substring(em-1,em+1);
-    if(ampm == "AM" && hours <= 12 ){
-      console.log("yep");
-      temp.push(element);
-    }
-  });
-  res.render('midnight',
-  {
-    data: temp
-  });
+
+app.get('/about', function(req,res){
+  res.render('about');
 });
 
 app.listen(3000, function() {

@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <!-- <link rel="stylesheet" type="text/css" href="/public/css/main.css"> -->
+  <title>Add Restaurant</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.1.1/jquery.js"></script>
+</head>
+
+<body>
+  <form action="/api/addMenuItems" method="post">
+  <fieldset>
+    <legend>Add Menu Items to a Restaurant</legend>
+    <br>
+    <label>Restaurant Name:</label>
+    <input type="text" name="name" placeholder="Enter an existing restaurant"><br>
+    <!-- change to select form -->
+    <fieldset>
+      <legend>Menu</legend><br>
+      <label>Enter menu items here (separated by commas): </label>
+      <input type="text" name="items" placeholder="Burger, Fries, Milkshake" size="30">
+      <br>
+    </fieldset>
+    <input type="submit" value="Submit">
+  </fieldset>
+</form>
+</body>
+</html>
